@@ -930,7 +930,10 @@ function parseHomeTimelineTweets(xhr, data, seenKey) {
     if (data.errors && data.errors[0]) {
         return { tweets: [], entries: null };
     }
-    let instructions = data.data.home.home_timeline_urt.instructions;
+    let instructions = data?.data?.home?.home_timeline_urt?.instructions;
+    if (!instructions) {
+        return { tweets: [], entries: null };
+    }
     let entries = instructions.find((i) => i.type === "TimelineAddEntries");
     if (!entries) {
         return { tweets: [], entries: null };
@@ -1195,6 +1198,91 @@ function emulateResponse(xhr) {
 
 let counter = 0;
 let bookmarkTimes = {};
+
+// Columns stop showing new tweets when the in-memory GraphQL cursors go stale,
+// and the only recovery used to be reloading the whole tab (which also burns
+// the rate limit). This drops that state and asks TweetDeck to refetch.
+function resetColumnFetchState() {
+    for (let key of Object.keys(cursors)) delete cursors[key];
+    seenHomeTweets = {};
+    seenNotifications = [];
+    bookmarkTimes = {};
+    for (let bucket of Object.values(timings)) {
+        if (!bucket) continue;
+        for (let key of Object.keys(bucket)) delete bucket[key];
+    }
+}
+
+function reloadAllColumns() {
+    resetColumnFetchState();
+    let scheduler = window.TD && TD.controller && TD.controller.feedScheduler;
+    let manager = window.TD && TD.controller && TD.controller.columnManager;
+    let feedManager = window.TD && TD.controller && TD.controller.feedManager;
+    if (!scheduler || typeof scheduler.refreshColumn !== "function") {
+        console.warn("[OTD] feedScheduler.refreshColumn is not available yet");
+        return 0;
+    }
+    let keys = new Set();
+    for (let el of document.querySelectorAll(".js-column[data-column]")) {
+        let key = el.getAttribute("data-column");
+        if (key) keys.add(key);
+    }
+    let refreshed = 0;
+    for (let key of keys) {
+        try {
+            let column = manager && manager.get ? manager.get(key) : null;
+            let feeds = column && column.getFeeds ? column.getFeeds() : [];
+            for (let feed of feeds || []) {
+                if (!feedManager || !feed.getKey) continue;
+                let poller = feedManager.getPoller(feed.getKey());
+                // Pollers ignore refresh() for 60s after the last poll.
+                if (poller) poller.refreshLock = 0;
+            }
+            scheduler.refreshColumn(key, { reset: true });
+            refreshed++;
+        } catch (err) {
+            console.error("[OTD] column refresh failed:", key, err);
+        }
+    }
+    console.log("[OTD] reloaded", refreshed, "columns");
+    return refreshed;
+}
+
+function installFixColumnsButton() {
+    let add = document.querySelector("a.js-app-add-column");
+    if (!add || !add.parentElement) return;
+    if (add.parentElement.querySelector(".js-otd-fix-columns")) return;
+
+    let link = document.createElement("a");
+    link.href = "#";
+    link.className =
+        "js-header-action js-otd-fix-columns link-clean cf app-nav-link padding-h--16 padding-v--2";
+    link.dataset.title = "Reload columns";
+    link.title = "Clear stuck cursors and reload every column";
+    link.innerHTML =
+        '<div class="obj-left margin-l--2"><i class="icon icon-clear-timeline icon-medium"></i></div>' +
+        '<div class="nbfc padding-ts hide-condensed txt-size--14 app-nav-link-text">Reload columns</div>';
+    link.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        let label = link.querySelector(".app-nav-link-text");
+        let count = 0;
+        try {
+            count = reloadAllColumns();
+        } catch (err) {
+            console.error("[OTD] reload columns failed:", err);
+        }
+        if (label) label.textContent = count ? "Reloaded" : "Nothing to reload";
+        setTimeout(() => {
+            if (label) label.textContent = "Reload columns";
+        }, 1600);
+    });
+    add.insertAdjacentElement("afterend", link);
+}
+
+installFixColumnsButton();
+setInterval(installFixColumnsButton, 1000);
+
 const OriginalXHR = XMLHttpRequest;
 const proxyRoutes = [
     // Home timeline
@@ -1284,7 +1372,10 @@ const proxyRoutes = [
             if (data.errors && data.errors[0]) {
                 return [];
             }
-            let instructions = data.data.home.home_timeline_urt.instructions;
+            let instructions = data?.data?.home?.home_timeline_urt?.instructions;
+            if (!instructions) {
+                return [];
+            }
             let entries = instructions.find((i) => i.type === "TimelineAddEntries");
             if (!entries) {
                 return [];
@@ -1774,7 +1865,7 @@ const proxyRoutes = [
                 (e) =>
                     e.entryId.startsWith("sq-cursor-bottom-") ||
                     e.entryId.startsWith("cursor-bottom-")
-            ).content.value;
+            )?.content?.value;
             if (bottomCursor) {
                 cursors[`${xhr.storage.user_id}-${tweets[tweets.length - 1].id_str}`] = bottomCursor;
             }
@@ -1921,7 +2012,7 @@ const proxyRoutes = [
                 (e) =>
                     e.entryId.startsWith("sq-cursor-bottom-") ||
                     e.entryId.startsWith("cursor-bottom-")
-            ).content.value;
+            )?.content?.value;
             if (cursor) {
                 cursors[`bookmarks-${tweets[tweets.length - 1].id_str}`] = cursor;
             }
@@ -2283,7 +2374,7 @@ const proxyRoutes = [
                 (e) =>
                     e.entryId.startsWith("sq-cursor-bottom-") ||
                     e.entryId.startsWith("cursor-bottom-")
-            ).content.value;
+            )?.content?.value;
             if (cursor) {
                 cursors[`${xhr.storage.user_id}-${tweets[tweets.length - 1].id_str}-likes`] = cursor;
             }
