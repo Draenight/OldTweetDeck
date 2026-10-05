@@ -38,7 +38,13 @@ async function main() {
             fetch(chrome.runtime.getURL("/files/bundle.css")).then(r => r.text()),
             fetch(chrome.runtime.getURL("/files/twitter-text.js")).then(r => r.text()),
         ]);
-    if (!localStorage.getItem("OTDalwaysUseLocalFiles")) {
+    // This dev build runs the scripts packed in the extension (the fork, including
+    // For you columns and Reload columns). Opt back into remote copies with
+    // localStorage.OTDuseRemoteFiles = "1". OTDalwaysUseLocalFiles still forces local.
+    if (
+        localStorage.getItem("OTDuseRemoteFiles") === "1" &&
+        localStorage.getItem("OTDalwaysUseLocalFiles") !== "1"
+    ) {
         const [
             remote_challenge_js_req,
             remote_interception_js_req,
@@ -47,12 +53,12 @@ async function main() {
             remote_bundle_css_req,
             remote_twitter_text_req,
         ] = await Promise.allSettled([
-            fetch("https://raw.githubusercontent.com/dimdenGD/OldTweetDeck/main/src/challenge.js"),
-            fetch("https://raw.githubusercontent.com/dimdenGD/OldTweetDeck/main/src/interception.js"),
-            fetch("https://raw.githubusercontent.com/dimdenGD/OldTweetDeck/main/files/vendor.js"),
-            fetch("https://raw.githubusercontent.com/dimdenGD/OldTweetDeck/main/files/bundle.js"),
-            fetch("https://raw.githubusercontent.com/dimdenGD/OldTweetDeck/main/files/bundle.css"),
-            fetch("https://raw.githubusercontent.com/dimdenGD/OldTweetDeck/main/files/twitter-text.js"),
+            fetch("https://raw.githubusercontent.com/Draenight/OldTweetDeck/main/src/challenge.js"),
+            fetch("https://raw.githubusercontent.com/Draenight/OldTweetDeck/main/src/interception.js"),
+            fetch("https://raw.githubusercontent.com/Draenight/OldTweetDeck/main/files/vendor.js"),
+            fetch("https://raw.githubusercontent.com/Draenight/OldTweetDeck/main/files/bundle.js"),
+            fetch("https://raw.githubusercontent.com/Draenight/OldTweetDeck/main/files/bundle.css"),
+            fetch("https://raw.githubusercontent.com/Draenight/OldTweetDeck/main/files/twitter-text.js"),
         ]);
         
         if(
