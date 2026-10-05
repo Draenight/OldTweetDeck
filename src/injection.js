@@ -155,6 +155,97 @@ async function main() {
     bundle_css_style.innerHTML = bundle_css.value;
     document.head.appendChild(bundle_css_style);
 
+    let xTheme = document.createElement("style");
+    xTheme.id = "otd-x-theme";
+    // Current X palette: lights-out on the dark theme, the light theme on the
+    // light one. Quote tweets and link cards use X's 16px card chrome.
+    xTheme.textContent = `
+html, html.dark {
+    font-family: "TwitterChirp", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+html.dark body,
+html.dark .application,
+html.dark .app-content,
+html.dark .app-columns,
+html.dark .column,
+html.dark .column-panel,
+html.dark .column-header,
+html.dark .tweet-detail-wrapper,
+html.dark .app-header,
+html.dark .app-navigator,
+html.dark .app-nav {
+    background-color: #000 !important;
+    background: #000 !important;
+    color: #e7e9ea;
+}
+html.dark .column-header,
+html.dark .column-nav:after,
+html.dark .stream-item,
+html.dark .tweet-detail-wrapper .stream-item {
+    border-color: #2f3336 !important;
+}
+html.dark .stream-item {
+    border-bottom: 1px solid #2f3336;
+}
+html.dark .tweet-text a,
+html.dark .js-quoted-tweet-text a,
+html:not(.dark) .tweet-text a,
+html:not(.dark) .js-quoted-tweet-text a,
+html.dark .column-nav .nav-item button.active,
+html.dark .column-nav .nav-item button:hover {
+    color: #1d9bf0;
+}
+html.dark .txt-mute,
+html.dark .tweet-context,
+html.dark .username {
+    color: #71767b !important;
+}
+html:not(.dark) .column,
+html:not(.dark) .column-panel,
+html:not(.dark) .column-header {
+    background: #fff !important;
+    color: #0f1419;
+}
+html:not(.dark) .stream-item {
+    border-bottom: 1px solid #eff3f4;
+}
+html:not(.dark) .txt-mute,
+html:not(.dark) .username {
+    color: #536471 !important;
+}
+html .quoted-tweet,
+html .js-card-container,
+html .hw-card-container {
+    border-radius: 16px !important;
+    overflow: hidden;
+}
+html.dark .quoted-tweet,
+html.dark .js-card-container,
+html.dark .hw-card-container {
+    border: 1px solid #2f3336 !important;
+    background: #000 !important;
+    color: #e7e9ea !important;
+}
+html:not(.dark) .quoted-tweet,
+html:not(.dark) .js-card-container,
+html:not(.dark) .hw-card-container {
+    border: 1px solid #cfd9de !important;
+    background: #fff !important;
+    color: #0f1419 !important;
+}
+html .media-preview,
+html .media-item,
+html .media-preview img,
+html .media-item img,
+html .js-media img {
+    border-radius: 16px;
+}
+html .column.is-focused {
+    box-shadow: 0 0 0 2px #1d9bf0 !important;
+}
+`;
+    document.head.appendChild(xTheme);
+
     let vendor_js_script = document.createElement("script");
     vendor_js_script.innerHTML = vendor_js.value;
     document.head.appendChild(vendor_js_script);
