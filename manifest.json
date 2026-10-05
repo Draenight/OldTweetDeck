@@ -1,9 +1,9 @@
 {
-    "name": "OldTweetDeck",
-    "description": "Returns old TweetDeck!",
-    "version": "4.4.0",
+    "name": "OldTweetDeck Dev",
+    "description": "Dev build of OldTweetDeck with For you columns and a Reload columns control.",
+    "version": "4.4.1",
     "manifest_version": 3,
-    "homepage_url": "https://github.com/dimdenGD/OldTweetDeck",
+    "homepage_url": "https://github.com/Draenight/OldTweetDeck",
     "permissions": [
         "webNavigation",
         "cookies",
